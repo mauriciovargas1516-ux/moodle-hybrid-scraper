@@ -60,7 +60,6 @@ def descargar_archivo_real(sesion, url, carpeta, num_archivo, nombre_sugerido=No
     res = sesion.get(url_directa, verify=False, stream=True)
     content_type = res.headers.get('Content-Type', '').lower()
     
-    # 1. Si chocamos con una página web en lugar del archivo directo
     if 'text/html' in content_type:
         soup_html = BeautifulSoup(res.text, 'html.parser')
         
@@ -69,12 +68,10 @@ def descargar_archivo_real(sesion, url, carpeta, num_archivo, nombre_sugerido=No
         
         enlace_archivo = None
         
-        # Primero buscamos visor PDF clásico
         objeto_pdf = soup_html.find('object', type='application/pdf')
         if objeto_pdf and 'data' in objeto_pdf.attrs:
             enlace_archivo = objeto_pdf['data']
         else:
-            # Ahora buscamos cualquier enlace de descarga para Excel, Word, PPT, etc.
             for a in soup_html.find_all('a', href=True):
                 href = a['href'].lower()
                 if 'pluginfile.php' in href or any(href.endswith(ext) for ext in ['.pdf', '.xlsx', '.xls', '.docx', '.doc', '.pptx', '.zip']):
@@ -88,11 +85,9 @@ def descargar_archivo_real(sesion, url, carpeta, num_archivo, nombre_sugerido=No
             print(f"Ignorado (Web externa sin archivo evidente): {url}")
             return False
 
-    # 2. PROCESAMIENTO DEL NOMBRE Y EXTENSIÓN REAL
     nombre_base = nombre_sugerido if nombre_sugerido else f"apunte_{num_archivo}"
     extension_final = ""
 
-    # Extraemos la extensión real desde el servidor de la universidad
     if "Content-Disposition" in res.headers:
         cd = res.headers["Content-Disposition"]
         if "filename=" in cd:
@@ -103,12 +98,11 @@ def descargar_archivo_real(sesion, url, carpeta, num_archivo, nombre_sugerido=No
                 if not nombre_sugerido:
                     nombre_base = nombre_real.replace(ext, "")
     
-    # Si el servidor no mandó la extensión, tratamos de adivinarla
     if not extension_final:
         if 'spreadsheet' in content_type or 'excel' in content_type: extension_final = '.xlsx'
         elif 'word' in content_type: extension_final = '.docx'
         elif 'zip' in content_type: extension_final = '.zip'
-        else: extension_final = '.pdf' # Ante la duda total, asume PDF
+        else: extension_final = '.pdf' 
 
     nombre_archivo = limpiar_nombre(nombre_base) + extension_final
     ruta_completa = os.path.join(carpeta, nombre_archivo)
@@ -168,23 +162,40 @@ response = sesion_activa.get(url_curso_elegido, verify=False)
 soup = BeautifulSoup(response.text, 'html.parser')
 
 enlaces_principales = soup.find_all('a', href=True)
+
+# SEPARACIÓN DE RUTAS (El nuevo parche para "section.php")
 enlaces_directos = list(set([a['href'] for a in enlaces_principales if 'resource/view.php' in a['href'] or 'pluginfile.php' in a['href'] or 'url/view.php' in a['href']]))
 enlaces_carpetas = list(set([a['href'] for a in enlaces_principales if 'folder/view.php' in a['href']]))
+enlaces_secciones = list(set([a['href'] for a in enlaces_principales if 'course/section.php' in a['href']]))
 
 contador = 1
-print(f"Rastreo principal: {len(enlaces_directos)} enlaces y {len(enlaces_carpetas)} carpetas encontradas.")
+print(f"Rastreo principal: {len(enlaces_directos)} enlaces, {len(enlaces_carpetas)} carpetas y {len(enlaces_secciones)} sub-secciones encontradas.")
 
+# 1. Extracción de enlaces directos
 for link in enlaces_directos:
     descargar_archivo_real(sesion_activa, link, carpeta_destino, contador)
     contador += 1
 
+# 2. Extracción dentro de carpetas de Moodle
 for carpeta_url in enlaces_carpetas:
     res_carpeta = sesion_activa.get(carpeta_url, verify=False)
     archivos_adentro = list(set([a['href'] for a in BeautifulSoup(res_carpeta.text, 'html.parser').find_all('a', href=True) if 'pluginfile.php' in a['href'] and 'forcedownload=1' in a['href']]))
          
     for link_interno in archivos_adentro:
-        link_limpio = link_interno.split('?')[0] if '?' in link_interno else link_interno
+        link_limpio = link_interno.split('?')[0] if '?' in link_interno and 'pluginfile' in link_interno else link_interno
         descargar_archivo_real(sesion_activa, link_limpio, carpeta_destino, contador)
+        contador += 1
+
+# 3. Extracción profunda en Sub-secciones expansibles (NUEVO)
+for seccion_url in enlaces_secciones:
+    print(f"Explorando sub-sección oculta: {seccion_url}")
+    res_seccion = sesion_activa.get(seccion_url, verify=False)
+    soup_seccion = BeautifulSoup(res_seccion.text, 'html.parser')
+    
+    recursos_seccion = list(set([a['href'] for a in soup_seccion.find_all('a', href=True) if 'resource/view.php' in a['href'] or 'pluginfile.php' in a['href'] or 'url/view.php' in a['href']]))
+    
+    for link in recursos_seccion:
+        descargar_archivo_real(sesion_activa, link, carpeta_destino, contador)
         contador += 1
 
 print("\n¡Operación de rastreo y descarga masiva completada con éxito!")
