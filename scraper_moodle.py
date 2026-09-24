@@ -2,17 +2,17 @@ import requests
 from bs4 import BeautifulSoup
 import os
 import re
-import tkinter as tk
-from tkinter import filedialog
 import urllib3
 from urllib.parse import urljoin
 import time
+from datetime import datetime
 
 try:
     from selenium import webdriver
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import Select
 except ImportError:
     print("Falta instalar Selenium. Ejecuta en la terminal: pip install selenium")
     exit()
@@ -28,15 +28,44 @@ def obtener_sesion_hibrida():
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     
-    driver = webdriver.Chrome(options=options)
-    driver.get(URL_LOGIN)
+    # Opcional: Descomenta la siguiente línea si quieres que se ejecute invisible en el fondo
+    # options.add_argument('--headless') 
     
-    print("Por favor, inicia sesión manualmente en la ventana de Chrome.")
+    driver = webdriver.Chrome(options=options)
+    # Entramos directamente al link que mencionaste
+    driver.get("https://www.ulagosvirtual.cl/login/index.php")
+    
+    print("Iniciando sesión automáticamente...")
+    
+    try:
+        # 1. Esperamos y llenamos la caja "Usuario"
+        caja_usuario = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@placeholder='Usuario']"))
+        )
+        caja_usuario.send_keys("mauricioalejandro.vargas1")
+        
+        # 2. Seleccionamos el dominio "@alumnos.ulagos.cl" en el desplegable
+        # Buscamos el elemento <select> que está en ese formulario
+        elemento_select = driver.find_element(By.XPATH, "//select")
+        menu_desplegable = Select(elemento_select)
+        menu_desplegable.select_by_visible_text("@alumnos.ulagos.cl")
+        
+        # 3. Llenamos la caja "Contraseña"
+        caja_clave = driver.find_element(By.XPATH, "//input[@placeholder='Contraseña']")
+        caja_clave.send_keys("ye16my7re4ij")
+        
+        # 4. Hacemos clic en el botón "Iniciar sesión"
+        boton_ingresar = driver.find_element(By.XPATH, "//button[contains(text(), 'Iniciar sesión')]")
+        boton_ingresar.click()
+        
+    except Exception as e:
+        print("Error al intentar llenar las 3 casillas. Verifica si cambió el diseño de la página:", e)
+
     print("Esperando acceso al Área Personal...")
     
     WebDriverWait(driver, 120).until(lambda d: "login" not in d.current_url.lower())
     
-    print("¡Acceso concedido! Esperando que Moodle dibuje los cursos...")
+    print("¡Acceso concedido automáticamente! Esperando que Moodle dibuje los cursos...")
     time.sleep(4) 
     
     html_dashboard = driver.page_source
@@ -83,7 +112,7 @@ def descargar_archivo_real(sesion, url, carpeta, num_archivo, nombre_sugerido=No
             return descargar_archivo_real(sesion, urljoin(url, enlace_archivo), carpeta, num_archivo, titulo_limpio)
         else:
             print(f"Ignorado (Web externa sin archivo evidente): {url}")
-            return False
+            return "ignorados"
 
     nombre_base = nombre_sugerido if nombre_sugerido else f"apunte_{num_archivo}"
     extension_final = ""
@@ -109,16 +138,16 @@ def descargar_archivo_real(sesion, url, carpeta, num_archivo, nombre_sugerido=No
     
     if os.path.exists(ruta_completa):
         print(f"Omitido (Ya existe): {nombre_archivo}")
-        return True
+        return "omitidos"
         
     with open(ruta_completa, 'wb') as f:
         for chunk in res.iter_content(chunk_size=8192):
             f.write(chunk)
             
     print(f"Descargado exitosamente: {nombre_archivo}")
-    return True
+    return "descargados"
 
-# --- 4. EJECUCIÓN PRINCIPAL ---
+# --- 4. EJECUCIÓN PRINCIPAL (VERSIÓN PILOTO AUTOMÁTICO CON REPORTES) ---
 sesion_activa, html_dash = obtener_sesion_hibrida()
 
 print("\nAnalizando tus cursos disponibles...")
@@ -136,66 +165,83 @@ for a in soup_dash.find_all('a', href=True):
 if not cursos_dict:
     cursos_dict["https://www.ulagosvirtual.cl/course/view.php?id=4056"] = "Gestión Tributaria (Respaldo)"
 
-print("\n--- TUS MÓDULOS ---")
-lista_urls = list(cursos_dict.keys())
-for i, url_c in enumerate(lista_urls):
-    print(f"[{i+1}] {cursos_dict[url_c]}")
+MAPEO_RUTAS = {
+    "Tributaria": r"C:\Users\lilo6\OneDrive\Escritorio\TRIBUTARIA 2026",
+    "Finanzas": r"C:\Users\lilo6\OneDrive\Escritorio\FINANZAS AVANZADAS 2026",
+    "Territorial": r"C:\Users\lilo6\OneDrive\Escritorio\TERRITORIAL 2026",
+    "Proyectos": r"C:\Users\lilo6\OneDrive\Escritorio\PROYECTOS 2026"
+}
 
-try:
-    opcion = int(input("\nIngresa el NÚMERO del módulo que deseas descargar: "))
-    url_curso_elegido = lista_urls[opcion - 1]
-except:
-    print("Selección inválida. Saliendo.")
-    exit()
+print("\nIniciando Sincronización Automática de todos los módulos...")
 
-root = tk.Tk()
-root.withdraw()
-print(f"\nSelecciona la carpeta donde guardar: {cursos_dict[url_curso_elegido]}")
-carpeta_destino = filedialog.askdirectory(title=f"Guardando: {cursos_dict[url_curso_elegido]}")
+estadisticas = {"descargados": 0, "omitidos": 0, "ignorados": 0}
 
-if not carpeta_destino:
-    print("Descarga cancelada.")
-    exit()
+def registrar_stat(resultado):
+    if resultado in estadisticas:
+        estadisticas[resultado] += 1
 
-print(f"\nExtrayendo archivos de {cursos_dict[url_curso_elegido]}...")
-response = sesion_activa.get(url_curso_elegido, verify=False)
-soup = BeautifulSoup(response.text, 'html.parser')
+for url_curso, nombre_curso in cursos_dict.items():
+    carpeta_destino = None
+    
+    for clave, ruta in MAPEO_RUTAS.items():
+        if clave.lower() in nombre_curso.lower():
+            carpeta_destino = ruta
+            break
+            
+    if not carpeta_destino:
+        print(f"Saltando curso (No mapeado en tu escritorio): {nombre_curso}")
+        continue
 
-enlaces_principales = soup.find_all('a', href=True)
+    if not os.path.exists(carpeta_destino):
+        os.makedirs(carpeta_destino)
 
-# SEPARACIÓN DE RUTAS (El nuevo parche para "section.php")
-enlaces_directos = list(set([a['href'] for a in enlaces_principales if 'resource/view.php' in a['href'] or 'pluginfile.php' in a['href'] or 'url/view.php' in a['href']]))
-enlaces_carpetas = list(set([a['href'] for a in enlaces_principales if 'folder/view.php' in a['href']]))
-enlaces_secciones = list(set([a['href'] for a in enlaces_principales if 'course/section.php' in a['href']]))
+    print(f"\n==================================================")
+    print(f"Sincronizando: {nombre_curso}")
+    print(f"Destino local: {carpeta_destino}")
+    print(f"==================================================")
 
-contador = 1
-print(f"Rastreo principal: {len(enlaces_directos)} enlaces, {len(enlaces_carpetas)} carpetas y {len(enlaces_secciones)} sub-secciones encontradas.")
+    response = sesion_activa.get(url_curso, verify=False)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    enlaces_principales = soup.find_all('a', href=True)
 
-# 1. Extracción de enlaces directos
-for link in enlaces_directos:
-    descargar_archivo_real(sesion_activa, link, carpeta_destino, contador)
-    contador += 1
+    enlaces_directos = list(set([a['href'] for a in enlaces_principales if 'resource/view.php' in a['href'] or 'pluginfile.php' in a['href'] or 'url/view.php' in a['href']]))
+    enlaces_carpetas = list(set([a['href'] for a in enlaces_principales if 'folder/view.php' in a['href']]))
+    enlaces_secciones = list(set([a['href'] for a in enlaces_principales if 'course/section.php' in a['href']]))
 
-# 2. Extracción dentro de carpetas de Moodle
-for carpeta_url in enlaces_carpetas:
-    res_carpeta = sesion_activa.get(carpeta_url, verify=False)
-    archivos_adentro = list(set([a['href'] for a in BeautifulSoup(res_carpeta.text, 'html.parser').find_all('a', href=True) if 'pluginfile.php' in a['href'] and 'forcedownload=1' in a['href']]))
-         
-    for link_interno in archivos_adentro:
-        link_limpio = link_interno.split('?')[0] if '?' in link_interno and 'pluginfile' in link_interno else link_interno
-        descargar_archivo_real(sesion_activa, link_limpio, carpeta_destino, contador)
+    contador = 1
+    
+    for link in enlaces_directos:
+        registrar_stat(descargar_archivo_real(sesion_activa, link, carpeta_destino, contador))
         contador += 1
 
-# 3. Extracción profunda en Sub-secciones expansibles (NUEVO)
-for seccion_url in enlaces_secciones:
-    print(f"Explorando sub-sección oculta: {seccion_url}")
-    res_seccion = sesion_activa.get(seccion_url, verify=False)
-    soup_seccion = BeautifulSoup(res_seccion.text, 'html.parser')
-    
-    recursos_seccion = list(set([a['href'] for a in soup_seccion.find_all('a', href=True) if 'resource/view.php' in a['href'] or 'pluginfile.php' in a['href'] or 'url/view.php' in a['href']]))
-    
-    for link in recursos_seccion:
-        descargar_archivo_real(sesion_activa, link, carpeta_destino, contador)
-        contador += 1
+    for carpeta_url in enlaces_carpetas:
+        res_carpeta = sesion_activa.get(carpeta_url, verify=False)
+        archivos_adentro = list(set([a['href'] for a in BeautifulSoup(res_carpeta.text, 'html.parser').find_all('a', href=True) if 'pluginfile.php' in a['href'] and 'forcedownload=1' in a['href']]))
+        for link_interno in archivos_adentro:
+            link_limpio = link_interno.split('?')[0] if '?' in link_interno and 'pluginfile' in link_interno else link_interno
+            registrar_stat(descargar_archivo_real(sesion_activa, link_limpio, carpeta_destino, contador))
+            contador += 1
 
-print("\n¡Operación de rastreo y descarga masiva completada con éxito!")
+    for seccion_url in enlaces_secciones:
+        res_seccion = sesion_activa.get(seccion_url, verify=False)
+        recursos_seccion = list(set([a['href'] for a in BeautifulSoup(res_seccion.text, 'html.parser').find_all('a', href=True) if 'resource/view.php' in a['href'] or 'pluginfile.php' in a['href'] or 'url/view.php' in a['href']]))
+        for link in recursos_seccion:
+            registrar_stat(descargar_archivo_real(sesion_activa, link, carpeta_destino, contador))
+            contador += 1
+
+ruta_reporte = r"C:\Users\lilo6\OneDrive\Escritorio\Reporte_Sincronizacion_Ulagos.txt"
+fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+with open(ruta_reporte, "w", encoding="utf-8") as f:
+    f.write("=========================================\n")
+    f.write("  REPORTE EJECUTIVO DE SINCRONIZACIÓN\n")
+    f.write("=========================================\n")
+    f.write(f"Fecha de ejecución: {fecha_actual}\n\n")
+    f.write("RESUMEN GLOBAL:\n")
+    f.write(f"[+] Archivos NUEVOS descargados: {estadisticas['descargados']}\n")
+    f.write(f"[-] Archivos OMITIDOS (ya existían): {estadisticas['omitidos']}\n")
+    f.write(f"[!] Enlaces externos ignorados: {estadisticas['ignorados']}\n\n")
+    f.write("ESTADO: Sistema al día y carpetas sincronizadas.\n")
+    f.write("=========================================\n")
+
+print(f"\n¡Sincronización Total Completada! Revisa el reporte en tu Escritorio.")
