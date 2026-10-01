@@ -180,20 +180,29 @@ def registrar_stat(resultado):
     if resultado in estadisticas:
         estadisticas[resultado] += 1
 
+ruta_base_escritorio = r"C:\Users\lilo6\OneDrive\Escritorio"
+año_actual = datetime.now().year
+
 for url_curso, nombre_curso in cursos_dict.items():
     carpeta_destino = None
     
+    # 1. Revisar si tienes una ruta personalizada en MAPEO_RUTAS
     for clave, ruta in MAPEO_RUTAS.items():
         if clave.lower() in nombre_curso.lower():
             carpeta_destino = ruta
             break
             
+    # 2. MEJORA: Si no está en MAPEO_RUTAS, crear la ruta dinámicamente
     if not carpeta_destino:
-        print(f"Saltando curso (No mapeado en tu escritorio): {nombre_curso}")
-        continue
+        # Limpiamos el nombre original de Moodle, lo pasamos a mayúsculas y le sumamos el año
+        nombre_ramo_limpio = limpiar_nombre(nombre_curso).upper()
+        nombre_carpeta_dinamica = f"{nombre_ramo_limpio} {año_actual}"
+        carpeta_destino = os.path.join(ruta_base_escritorio, nombre_carpeta_dinamica)
 
+    # 3. Validar y crear la carpeta si no existe en el escritorio
     if not os.path.exists(carpeta_destino):
         os.makedirs(carpeta_destino)
+        print(f"[*] ¡Carpeta nueva detectada y creada!: {carpeta_destino}")
 
     print(f"\n==================================================")
     print(f"Sincronizando: {nombre_curso}")
