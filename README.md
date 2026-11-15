@@ -1,5 +1,8 @@
 # Moodle Hybrid Scraper 
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://moodle-hybrid-scraper-dcwiyhxggcp9uzk8l5tbd9.streamlit.app/)
+
+
 Un rastreador web de arquitectura híbrida diseñado para evadir barreras anti-bots, gestionar tokens de sesión dinámicos y automatizar la extracción masiva de documentos estructurados desde plataformas LMS (Moodle).
 
 ##  Características Técnicas
