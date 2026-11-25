@@ -4,6 +4,7 @@ import os
 import re
 import time
 import shutil
+import json
 import zipfile
 import urllib3
 from datetime import datetime
@@ -34,6 +35,43 @@ st.markdown(
     "Extrae y empaqueta tus apuntes desde **ULagos Virtual** en un `.zip` organizado por ramo, "
     "con **Cámara en Vivo** para ver al navegador entrar al portal y rescatar los archivos en tiempo real."
 )
+
+# --- PANEL DE ESTADO DEL ROBOT AUTOMÁTICO (GITHUB ACTIONS) ---
+if os.path.exists("ultimo_sync.json"):
+    try:
+        with open("ultimo_sync.json", "r", encoding="utf-8") as _fj:
+            _rep = json.load(_fj)
+        with st.expander(
+            f"Robot Automático GitHub Actions — Última corrida: {_rep.get('fecha_chile', 'N/D')} ({_rep.get('estado', 'N/D')})",
+            expanded=True,
+        ):
+            _res = _rep.get("resumen", {})
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Cursos revisados", _res.get("cursos_revisados", 0))
+            c2.metric("Nuevos subidos", _res.get("nuevos_subidos", 0))
+            c3.metric("Sin cambios", _res.get("sin_cambios", 0))
+            c4.metric("Multi-repo activo", "Sí" if _rep.get("push_multirepo_activo") else "Pendiente PAT")
+            if _rep.get("nota"):
+                st.info(_rep["nota"])
+            if _rep.get("novedades"):
+                st.markdown("**Últimos archivos enviados a tus repositorios:**")
+                for _nov in _rep["novedades"][:12]:
+                    st.code(_nov, language=None)
+            _repos_dict = _rep.get("repos", {})
+            if _repos_dict:
+                _filas_r = [
+                    {
+                        "Repositorio / Curso": k,
+                        "Archivos detectados": v.get("total_detectados", 0),
+                        "Nuevos": v.get("nuevos", 0),
+                        "Sin cambios": v.get("sin_cambios", 0),
+                    }
+                    for k, v in _repos_dict.items()
+                ]
+                st.dataframe(pd.DataFrame(_filas_r), use_container_width=True, hide_index=True)
+    except Exception:
+        pass
+
 
 # Leer credenciales desde st.secrets (seguro para repositorios públicos)
 def _leer_secreto(clave: str, default: str = "") -> str:
@@ -74,9 +112,11 @@ with st.form("form_login_moodle"):
             "Activar Cámara en Vivo (ver ULagos Virtual abriéndose paso a paso)",
             value=True,
         )
+        _es_windows = (os.name == "nt")
         modo_ventana_local = st.checkbox(
-            "Abrir ventana real de Chrome (solo si ejecutas en tu PC Windows)",
+            "Abrir ventana real de Chrome (solo disponible en tu PC Windows)",
             value=False,
+            disabled=not _es_windows,
         )
 
     iniciar_btn = st.form_submit_button("Lanzar Sincronización en Vivo", use_container_width=True)
