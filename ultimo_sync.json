@@ -1,14 +1,14 @@
 {
-  "fecha_utc": "2026-11-26 04:46:30 UTC",
-  "fecha_chile": "2026-11-26 01:46 Chile",
+  "fecha_utc": "2026-11-26 20:01:58 UTC",
+  "fecha_chile": "2026-11-26 17:01 Chile",
   "estado": "OK",
   "carpeta_destino": "apuntes_moodle",
   "push_multirepo_activo": true,
   "resumen": {
     "cursos_revisados": 6,
-    "nuevos_subidos": 10,
+    "nuevos_subidos": 0,
     "actualizados": 0,
-    "sin_cambios": 105,
+    "sin_cambios": 115,
     "ignorados": 13,
     "errores": 0
   },
@@ -54,9 +54,9 @@
     "DESARROLLO-Y-GESTION-TERRITORIAL-2026": {
       "curso": "[2026-2SEM] Desarrollo y Gestión Territorial",
       "total_detectados": 41,
-      "nuevos": 3,
+      "nuevos": 0,
       "actualizados": 0,
-      "sin_cambios": 38,
+      "sin_cambios": 41,
       "archivos": [
         "Liceos.xlsx",
         "La_teoria_de_la_localizacion.pdf",
@@ -137,9 +137,9 @@
     "PROYECTOS-2026": {
       "curso": "[2026-2SEM] Evaluación Integrada de Proyectos",
       "total_detectados": 29,
-      "nuevos": 7,
+      "nuevos": 0,
       "actualizados": 0,
-      "sin_cambios": 22,
+      "sin_cambios": 29,
       "archivos": [
         "Clase1 (18 ago).pdf",
         "Clase2.pdf",
@@ -186,17 +186,6 @@
       ]
     }
   },
-  "novedades": [
-    "[NUEVO] DESARROLLO-Y-GESTION-TERRITORIAL-2026/apuntes_moodle/03 video2974156582.mp4",
-    "[NUEVO] DESARROLLO-Y-GESTION-TERRITORIAL-2026/apuntes_moodle/Mapear en MyMapps GOOGLE.mp4",
-    "[NUEVO] DESARROLLO-Y-GESTION-TERRITORIAL-2026/apuntes_moodle/video1667002071.mp4",
-    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Clase 1 E Social.pdf",
-    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Clase 2-4 E Social.pdf",
-    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Clase 2 E Social.pdf",
-    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Clase 3 E Social.pdf",
-    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Clase EA 3.pdf",
-    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Clase EA 4.pdf",
-    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Clase EA 5.pdf"
-  ],
+  "novedades": [],
   "nota": ""
 }
