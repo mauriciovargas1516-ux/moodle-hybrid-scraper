@@ -31,6 +31,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 URL_LOGIN = "https://www.ulagosvirtual.cl/login/index.php"
 MAX_FILE_BYTES = 25 * 1024 * 1024  # 25 MB límite seguro para GitHub Contents API
 
+# Extensiones de video prohibidas para mantener los repositorios livianos
+EXTENSIONES_PROHIBIDAS = (".mp4", ".avi", ".mkv", ".mov", ".flv", ".wmv", ".webm", ".m4v")
+
 # Mapeo palabra clave del curso en Moodle -> Repositorio destino en GitHub
 MAPEO_REPOS_CURSOS = {
     "tributaria": "GESTION-TRIBUTARIA-2026",
@@ -185,6 +188,11 @@ def extraer_pestanas_curso(url_curso: str, soup: BeautifulSoup) -> list:
 
 def descargar_recurso_memoria(sesion: requests.Session, url: str, num: int, nombre_sugerido=None):
     """Descarga un recurso de Moodle a memoria y devuelve (estado, nombre_archivo, bytes)."""
+    ruta_url = urlparse(url).path.lower()
+    if ruta_url.endswith(EXTENSIONES_PROHIBIDAS):
+        print(f"  [IGNORADO - VIDEO] {os.path.basename(ruta_url)}")
+        return "ignorados", None, None
+
     url_directa = url + "&redirect=1" if "view.php" in url and "redirect=1" not in url else url
     try:
         res = sesion.get(url_directa, verify=False, stream=True, timeout=25)
@@ -192,9 +200,15 @@ def descargar_recurso_memoria(sesion: requests.Session, url: str, num: int, nomb
         return "ignorados", None, None
 
     if res.status_code != 200:
+        res.close()
         return "ignorados", None, None
 
     content_type = res.headers.get("Content-Type", "").lower()
+
+    if "video/" in content_type:
+        res.close()
+        print(f"  [IGNORADO - VIDEO] {nombre_sugerido or url} ({content_type})")
+        return "ignorados", None, None
 
     if "text/html" in content_type:
         soup_html = BeautifulSoup(res.text, "html.parser")
@@ -212,6 +226,8 @@ def descargar_recurso_memoria(sesion: requests.Session, url: str, num: int, nomb
         else:
             for a in soup_html.find_all("a", href=True):
                 href = a["href"].lower()
+                if urlparse(href).path.endswith(EXTENSIONES_PROHIBIDAS):
+                    continue
                 if "pluginfile.php" in href or any(
                     href.endswith(ext) for ext in [".pdf", ".xlsx", ".xls", ".docx", ".doc", ".pptx", ".zip"]
                 ):
@@ -247,11 +263,31 @@ def descargar_recurso_memoria(sesion: requests.Session, url: str, num: int, nomb
         else:
             ext_final = ".pdf"
 
+    # Filtro anti-videos en streaming antes de bajar el cuerpo a RAM
+    if ext_final in EXTENSIONES_PROHIBIDAS or (
+        nombre_sugerido and nombre_sugerido.lower().endswith(EXTENSIONES_PROHIBIDAS)
+    ):
+        res.close()
+        print(f"  [IGNORADO - VIDEO] {limpiar_nombre(nombre_base)}{ext_final}")
+        return "ignorados", None, None
+
+    # Filtro previo por cabecera Content-Length para no descargar archivos gigantes
+    content_length = res.headers.get("Content-Length")
+    if content_length and content_length.isdigit() and int(content_length) > MAX_FILE_BYTES:
+        res.close()
+        mb = int(content_length) / (1024 * 1024)
+        print(f"  [IGNORADO - PESADO] {limpiar_nombre(nombre_base)}{ext_final} ({mb:.1f} MB)")
+        return "ignorados", None, None
+
     contenido = res.content
     if len(contenido) == 0 or len(contenido) > MAX_FILE_BYTES:
         return "ignorados", None, None
 
     nombre_archivo = limpiar_nombre(nombre_base) + ext_final
+    if nombre_archivo.lower().endswith(EXTENSIONES_PROHIBIDAS):
+        print(f"  [IGNORADO - VIDEO] {nombre_archivo}")
+        return "ignorados", None, None
+
     return "ok", nombre_archivo, contenido
 
 
