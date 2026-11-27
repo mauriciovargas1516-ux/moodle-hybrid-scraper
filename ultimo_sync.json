@@ -1,6 +1,6 @@
 {
-  "fecha_utc": "2026-11-27 04:52:25 UTC",
-  "fecha_chile": "2026-11-27 01:52 Chile",
+  "fecha_utc": "2026-11-27 19:50:29 UTC",
+  "fecha_chile": "2026-11-27 16:50 Chile",
   "estado": "OK",
   "carpeta_destino": "apuntes_moodle",
   "push_multirepo_activo": true,
@@ -8,8 +8,8 @@
     "cursos_revisados": 6,
     "nuevos_subidos": 0,
     "actualizados": 0,
-    "sin_cambios": 115,
-    "ignorados": 13,
+    "sin_cambios": 112,
+    "ignorados": 16,
     "errores": 0
   },
   "repos": {
@@ -53,10 +53,10 @@
     },
     "DESARROLLO-Y-GESTION-TERRITORIAL-2026": {
       "curso": "[2026-2SEM] Desarrollo y Gestión Territorial",
-      "total_detectados": 41,
+      "total_detectados": 38,
       "nuevos": 0,
       "actualizados": 0,
-      "sin_cambios": 41,
+      "sin_cambios": 38,
       "archivos": [
         "Liceos.xlsx",
         "La_teoria_de_la_localizacion.pdf",
@@ -73,7 +73,6 @@
         "Datos.xlsx",
         "UCINET.v6.232-SHOCK.zip",
         "20210827 MIPE y Ecosistema en Los Lagos.pdf",
-        "03 video2974156582.mp4",
         "DINI 2010. Competitividad_redes_empresas_y_cooperacion_empresarial.pdf",
         "06 OT 2024.pdf",
         "Ejemplo Matriz Rondinelli OT.xlsx",
@@ -81,7 +80,6 @@
         "PIB REGIONAL.xlsx",
         "POBLACION.xlsx",
         "Unidad Actividad_mapa.pdf",
-        "Mapear en MyMapps GOOGLE.mp4",
         "CLASE Ejemplos_Lorenz_Gini_Theil_Convergencia.xlsx",
         "Figueroa_et_al 2003.pdf",
         "Riuelme et al 11 paginas.pdf",
@@ -95,7 +93,6 @@
         "Unidad 5. Ordenamiento Territorial.pdf",
         "Unidad 6 Ponderar indice de desarrollo.pdf",
         "01 Caso_CRITIC_ejemplo_UV.xlsx",
-        "video1667002071.mp4",
         "20261124 CRITIC corregido UV.rmd",
         "ACTIVIDAD INDICES DE DESARROLLO.pdf",
         "Autoresas.pdf"
