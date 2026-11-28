@@ -1,12 +1,12 @@
 {
-  "fecha_utc": "2026-11-27 19:50:29 UTC",
-  "fecha_chile": "2026-11-27 16:50 Chile",
+  "fecha_utc": "2026-11-28 04:37:42 UTC",
+  "fecha_chile": "2026-11-28 01:37 Chile",
   "estado": "OK",
   "carpeta_destino": "apuntes_moodle",
   "push_multirepo_activo": true,
   "resumen": {
     "cursos_revisados": 6,
-    "nuevos_subidos": 0,
+    "nuevos_subidos": 6,
     "actualizados": 0,
     "sin_cambios": 112,
     "ignorados": 16,
@@ -133,8 +133,8 @@
     },
     "PROYECTOS-2026": {
       "curso": "[2026-2SEM] Evaluación Integrada de Proyectos",
-      "total_detectados": 29,
-      "nuevos": 0,
+      "total_detectados": 35,
+      "nuevos": 6,
       "actualizados": 0,
       "sin_cambios": 29,
       "archivos": [
@@ -166,7 +166,13 @@
         "Clase 3 E Social.pdf",
         "Clase EA 3.pdf",
         "Clase EA 4.pdf",
-        "Clase EA 5.pdf"
+        "Clase EA 5.pdf",
+        "EvaluaciÃ³n Social Mangueras rev.docx",
+        "Proyecto textil - REV.docx",
+        "Informe ValorizaciÃ³n Cascara de Huevo Rev.docx",
+        "Vargas,MuÃ±oz,Jofre, REV.docx",
+        "INFORME PROYECTO PAPEL CIRCULAR REV.docx",
+        "Proyecto Aceite.docx"
       ]
     },
     "[2026]A1: Introducción al Deporte Paralímpico": {
@@ -183,6 +189,13 @@
       ]
     }
   },
-  "novedades": [],
+  "novedades": [
+    "[NUEVO] PROYECTOS-2026/apuntes_moodle/EvaluaciÃ³n Social Mangueras rev.docx",
+    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Proyecto textil - REV.docx",
+    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Informe ValorizaciÃ³n Cascara de Huevo Rev.docx",
+    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Vargas,MuÃ±oz,Jofre, REV.docx",
+    "[NUEVO] PROYECTOS-2026/apuntes_moodle/INFORME PROYECTO PAPEL CIRCULAR REV.docx",
+    "[NUEVO] PROYECTOS-2026/apuntes_moodle/Proyecto Aceite.docx"
+  ],
   "nota": ""
 }
